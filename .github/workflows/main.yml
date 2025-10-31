@@ -2,8 +2,8 @@ name: Fetch JSON to rest_api.json
 
 on:
   schedule:
-    - cron: "*/10 * * * *"  
-  workflow_dispatch:        
+    - cron: "*/10 * * * *"  # every 10 minutes
+  workflow_dispatch:
 
 jobs:
   fetch-json:
@@ -16,11 +16,17 @@ jobs:
       - name: Fetch JSON from API
         run: |
           echo "Fetching JSON..."
-          curl -sSL "${{ secrets.API_URL }}" -o rest_api.json
-          
-          # Optional: wrap in {"status":"success","response":...}
-          jq -n --argfile data rest_api.json '{status:"success", response:$data}' > tmp.json
-          mv tmp.json rest_api.json
+          curl -sSL "${{ secrets.API_URL }}" -o rest_api_raw.json
+
+          # Check if file is valid JSON
+          if ! jq empty rest_api_raw.json; then
+            echo "Invalid JSON fetched, aborting."
+            exit 1
+          fi
+
+          # Wrap in {status:"success", response: ...}
+          jq -n --slurpfile data rest_api_raw.json '{status:"success", response:$data[0]}' > rest_api.json
+          rm rest_api_raw.json
 
       - name: Commit and push
         run: |
