@@ -1,8 +1,8 @@
-name: Fetch JSON to rest_api.json
+name: Fetch JSON
 
 on:
   schedule:
-    - cron: "*/10 * * * *"  # every 10 minutes
+    - cron: "*/10 * * * *"  
   workflow_dispatch:
 
 jobs:
