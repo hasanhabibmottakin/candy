@@ -1,0 +1,33 @@
+name: Fetch JSON to rest_api.json
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"  
+  workflow_dispatch:        
+
+jobs:
+  fetch-json:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch JSON from API
+        run: |
+          echo "Fetching JSON..."
+          curl -sSL "${{ secrets.API_URL }}" -o rest_api.json
+          
+          # Optional: wrap in {"status":"success","response":...}
+          jq -n --argfile data rest_api.json '{status:"success", response:$data}' > tmp.json
+          mv tmp.json rest_api.json
+
+      - name: Commit and push
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add rest_api.json
+          git commit -m "Auto-update rest_api.json" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
